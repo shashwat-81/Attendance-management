@@ -139,23 +139,62 @@ def student_dashboard():
     if current_user.role != 'student':
         return "Unauthorized", 403
     
-    # Get all attendance records for the student
-    attendance_records = list(mongo.db.attendance.find({'student_id': str(current_user.id)}))
-    
-    # Get subject details for each attendance record
-    for record in attendance_records:
-        subject = mongo.db.subjects.find_one({'_id': ObjectId(record['subject_id'])})
-        if subject:
-            record['subject_name'] = subject['name']
-        else:
-            record['subject_name'] = 'Unknown Subject'
-    
-    # Get marks for all subjects
-    marks_records = list(mongo.db.marks.find({'student_id': str(current_user.id)}))
-    
-    return render_template('student_dashboard.html', 
-                         attendance_records=attendance_records,
-                         marks_records=marks_records)
+    try:
+        # Get all subjects
+        subjects = list(mongo.db.subjects.find())
+        subject_dict = {str(subject['_id']): subject for subject in subjects}
+        
+        # Get all attendance records for the student
+        attendance_records = list(mongo.db.attendance.find({
+            "records": {
+                "$elemMatch": {
+                    "student_id": str(current_user.id)
+                }
+            }
+        }))
+        
+        # Process attendance records
+        processed_attendance = []
+        for record in attendance_records:
+            subject = subject_dict.get(record['subject_id'], {})
+            student_record = next(
+                (r for r in record['records'] if r['student_id'] == str(current_user.id)), 
+                None
+            )
+            if student_record:
+                processed_attendance.append({
+                    'date': record['date'],
+                    'subject_name': subject.get('name', 'Unknown Subject'),
+                    'subject_code': subject.get('code', 'N/A'),
+                    'status': student_record['status'],
+                    'marked_at': student_record.get('marked_at', record.get('created_at'))
+                })
+        
+        # Sort attendance by date (most recent first)
+        processed_attendance.sort(key=lambda x: x['date'], reverse=True)
+        
+        # Get and process marks
+        marks_records = list(mongo.db.marks.find({'student_id': str(current_user.id)}))
+        processed_marks = []
+        for mark in marks_records:
+            subject = subject_dict.get(mark['subject_id'], {})
+            processed_marks.append({
+                'subject_name': subject.get('name', 'Unknown Subject'),
+                'subject_code': subject.get('code', 'N/A'),
+                'marks': mark['marks'],
+                'grade': mark['grade']
+            })
+        
+        return render_template('student_dashboard.html', 
+                             attendance_records=processed_attendance,
+                             marks_records=processed_marks)
+                             
+    except Exception as e:
+        print(f"Error in student dashboard: {e}")
+        flash('Error loading dashboard data', 'error')
+        return render_template('student_dashboard.html', 
+                             attendance_records=[],
+                             marks_records=[])
 
 @main.route('/add_subject', methods=['POST'])
 @login_required

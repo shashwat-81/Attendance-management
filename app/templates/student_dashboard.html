@@ -5,10 +5,15 @@
 <div class="container py-4">
     <h2 class="text-primary mb-4">Student Dashboard</h2>
 
-    <!-- Attendance Card -->
+    <!-- Attendance Records -->
     <div class="card mb-4">
-        <div class="card-header bg-light">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h3 class="h5 mb-0">My Attendance</h3>
+            {% if attendance_records %}
+            <span class="badge bg-light text-primary">
+                Total Records: {{ attendance_records|length }}
+            </span>
+            {% endif %}
         </div>
         <div class="card-body">
             {% if attendance_records %}
@@ -19,35 +24,43 @@
                             <th>Date</th>
                             <th>Subject</th>
                             <th>Status</th>
+                            <th>Marked On</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for record in attendance_records %}
                         <tr>
                             <td>{{ record.date }}</td>
-                            <td>{{ record.subject_name }}</td>
                             <td>
-                                {% if record.status == 'present' %}
-                                <span class="badge bg-success">Present</span>
-                                {% else %}
-                                <span class="badge bg-danger">Absent</span>
-                                {% endif %}
+                                {{ record.subject_name }}
+                                <small class="text-muted">({{ record.subject_code }})</small>
                             </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if record.status == 'present' else 'danger' }}">
+                                    {{ record.status|title }}
+                                </span>
+                            </td>
+                            <td>{{ record.marked_at.strftime('%Y-%m-%d %H:%M') if record.marked_at else 'N/A' }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
             {% else %}
-            <p class="text-muted">No attendance records found.</p>
+            <p class="text-muted mb-0">No attendance records found.</p>
             {% endif %}
         </div>
     </div>
 
-    <!-- Marks Card -->
+    <!-- Marks Records -->
     <div class="card">
-        <div class="card-header bg-light">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h3 class="h5 mb-0">My Marks</h3>
+            {% if marks_records %}
+            <span class="badge bg-light text-primary">
+                Total Subjects: {{ marks_records|length }}
+            </span>
+            {% endif %}
         </div>
         <div class="card-body">
             {% if marks_records %}
@@ -61,18 +74,25 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for mark in marks_records %}
+                        {% for record in marks_records %}
                         <tr>
-                            <td>{{ mark.subject_name }}</td>
-                            <td>{{ mark.marks }}/100</td>
-                            <td>{{ mark.grade }}</td>
+                            <td>
+                                {{ record.subject_name }}
+                                <small class="text-muted">({{ record.subject_code }})</small>
+                            </td>
+                            <td>{{ record.marks }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if record.grade in ['A','B'] else 'warning' if record.grade == 'C' else 'danger' }}">
+                                    {{ record.grade }}
+                                </span>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
             {% else %}
-            <p class="text-muted">No marks records available.</p>
+            <p class="text-muted mb-0">No marks records available.</p>
             {% endif %}
         </div>
     </div>
