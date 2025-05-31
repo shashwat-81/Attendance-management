@@ -305,26 +305,59 @@ def add_marks():
     if current_user.role != 'faculty':
         return "Unauthorized", 403
         
-    student_id = request.form['student_id']
-    subject_id = request.form['subject_id']
-    marks = int(request.form['marks'])
-    
-    # Calculate grade based on marks
-    grade = 'F'
-    if marks >= 90: grade = 'A'
-    elif marks >= 80: grade = 'B'
-    elif marks >= 70: grade = 'C'
-    elif marks >= 60: grade = 'D'
-    
-    mongo.db.marks.insert_one({
-        'student_id': student_id,
-        'subject_id': subject_id,
-        'marks': marks,
-        'grade': grade,
-        'faculty_id': str(current_user.id)
-    })
-    
-    flash('Marks added successfully', 'success')
+    try:
+        subject_id = request.form.get('subject_id')
+        if not subject_id:
+            flash('Subject is required', 'error')
+            return redirect(url_for('main.faculty_dashboard'))
+
+        # Get subject details for verification
+        subject = mongo.db.subjects.find_one({'_id': ObjectId(subject_id)})
+        if not subject:
+            flash('Subject not found', 'error')
+            return redirect(url_for('main.faculty_dashboard'))
+
+        marks_added = 0
+        
+        # Process marks for each student
+        for key, value in request.form.items():
+            if key.startswith('marks_'):
+                student_id = key.split('_')[1]
+                marks = int(value)
+                
+                # Calculate grade
+                grade = 'F'
+                if marks >= 90: grade = 'A'
+                elif marks >= 80: grade = 'B'
+                elif marks >= 70: grade = 'C'
+                elif marks >= 60: grade = 'D'
+                
+                # Update or insert marks
+                result = mongo.db.marks.update_one(
+                    {
+                        'student_id': student_id,
+                        'subject_id': subject_id,
+                        'faculty_id': str(current_user.id)
+                    },
+                    {
+                        '$set': {
+                            'marks': marks,
+                            'grade': grade,
+                            'updated_at': datetime.now()
+                        }
+                    },
+                    upsert=True
+                )
+                
+                if result.modified_count or result.upserted_id:
+                    marks_added += 1
+
+        flash(f'Marks updated successfully for {marks_added} students', 'success')
+        
+    except Exception as e:
+        print(f"Error adding marks: {e}")
+        flash('Error adding marks', 'error')
+        
     return redirect(url_for('main.faculty_dashboard'))
 
 @main.route('/verify_attendance/<subject_id>/<date>')

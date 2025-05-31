@@ -97,6 +97,58 @@
         </div>
     </div>
 
+    <!-- Marks Section -->
+    <div class="card mb-4">
+        <div class="card-header bg-light">
+            <h3 class="h5 mb-0">Student Marks</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('main.add_marks') }}">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Select Subject</label>
+                        <select name="subject_id" class="form-select" required>
+                            <option value="">Choose Subject</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject._id }}">{{ subject.name }} ({{ subject.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Marks (out of 100)</th>
+                                <th>Grade</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in students %}
+                            <tr>
+                                <td>{{ student.username }}</td>
+                                <td>
+                                    <input type="number" class="form-control" 
+                                           name="marks_{{ student._id }}"
+                                           min="0" max="100" required
+                                           onchange="updateGrade(this)">
+                                </td>
+                                <td>
+                                    <span class="grade-display badge bg-secondary">Not Set</span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save Marks</button>
+            </form>
+        </div>
+    </div>
+
     <!-- Add Subject Modal -->
     <div class="modal fade" id="addSubjectModal" tabindex="-1">
         <div class="modal-dialog">
@@ -142,5 +194,29 @@ document.addEventListener('DOMContentLoaded', function() {
     const today = new Date().toISOString().split('T')[0];
     document.querySelector('input[name="date"]').value = today;
 });
+
+function updateGrade(input) {
+    const marks = parseInt(input.value);
+    const gradeDisplay = input.parentElement.nextElementSibling.querySelector('.grade-display');
+    let grade = 'F';
+    let bgClass = 'bg-danger';
+
+    if (marks >= 90) {
+        grade = 'A';
+        bgClass = 'bg-success';
+    } else if (marks >= 80) {
+        grade = 'B';
+        bgClass = 'bg-primary';
+    } else if (marks >= 70) {
+        grade = 'C';
+        bgClass = 'bg-info';
+    } else if (marks >= 60) {
+        grade = 'D';
+        bgClass = 'bg-warning';
+    }
+
+    gradeDisplay.textContent = grade;
+    gradeDisplay.className = `grade-display badge ${bgClass}`;
+}
 </script>
 {% endblock %}
