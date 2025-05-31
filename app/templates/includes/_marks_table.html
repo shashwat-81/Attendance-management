@@ -1,0 +1,21 @@
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Academic Performance</h4>
+            <span class="badge bg-primary">{{ marks_records|length }} Subjects</span>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if marks_records %}
+            {% include 'includes/_marks_table_content.html' %}
+        {% else %}
+            {% with 
+                icon="bi-clipboard-data",
+                title="No Marks Available",
+                message="Your academic records will appear here once marks are added."
+            %}
+                {% include 'includes/_empty_state.html' %}
+            {% endwith %}
+        {% endif %}
+    </div>
+</div>

@@ -1,100 +1,200 @@
 {% extends 'base.html' %}
 {% block title %}Student Dashboard{% endblock %}
 
+{% block styles %}
+<style>
+    /* Base Styles */
+    :root {
+        --primary-gradient: linear-gradient(135deg, #0d6efd, #0dcaf0);
+        --card-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.08);
+        --border-radius: 1rem;
+        --spacing-lg: 1.5rem;
+        --spacing-md: 1rem;
+    }
+
+    /* Header Styles */
+    .dashboard-header {
+        background: var(--primary-gradient);
+        color: white;
+        padding: var(--spacing-lg) 0;
+        margin-bottom: var(--spacing-lg);
+        border-radius: 0 0 var(--border-radius) var(--border-radius);
+        box-shadow: var(--card-shadow);
+    }
+
+    /* Card Styles */
+    .card, .stats-card {
+        border-radius: var(--border-radius);
+        border: none;
+        box-shadow: var(--card-shadow);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .stats-card {
+        background: white;
+        padding: var(--spacing-lg);
+        transition: transform 0.3s ease;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .card-header {
+        background: white;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+        padding: var(--spacing-lg);
+    }
+
+    .card-body {
+        padding: var(--spacing-lg);
+    }
+
+    /* Stats Card Content */
+    .stats-card .title {
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stats-card .value {
+        font-size: 2rem;
+        font-weight: 600;
+        margin: 0.5rem 0;
+    }
+
+    .stats-icon {
+        font-size: 2rem;
+        background: rgba(13, 110, 253, 0.1);
+        padding: var(--spacing-md);
+        border-radius: var(--border-radius);
+    }
+
+    /* Table Styles */
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        padding: var(--spacing-md);
+    }
+
+    .table td {
+        padding: var(--spacing-md);
+        vertical-align: middle;
+    }
+
+    /* Progress Bar */
+    .progress {
+        height: 8px;
+        border-radius: var(--border-radius);
+        background-color: #e9ecef;
+    }
+
+    .progress-bar {
+        border-radius: var(--border-radius);
+    }
+
+    /* Badges and Icons */
+    .grade-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+    }
+
+    .attendance-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        margin-right: 0.5rem;
+    }
+
+    .present-icon {
+        background: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+
+    .absent-icon {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+
+    /* Empty State */
+    .empty-state {
+        padding: 3rem 0;
+        text-align: center;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: var(--spacing-md);
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-    <h2 class="text-primary mb-4">Student Dashboard</h2>
+<!-- Header Section -->
+<div class="dashboard-header">
+    <div class="container">
+        <h1 class="display-5 fw-bold">Welcome, {{ current_user.username }}</h1>
+        <p class="lead mb-0">Your Academic Dashboard</p>
+    </div>
+</div>
 
-    <!-- Attendance Records -->
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h3 class="h5 mb-0">My Attendance</h3>
-            {% if attendance_records %}
-            <span class="badge bg-light text-primary">
-                Total Records: {{ attendance_records|length }}
-            </span>
-            {% endif %}
+<div class="container">
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-4">
+        <!-- Attendance Stats -->
+        <div class="col-md-4">
+            {% with 
+                title="Total Attendance",
+                value=attendance_records|length,
+                subtitle="Records",
+                icon="bi-calendar-check",
+                color="primary"
+            %}
+                {% include 'includes/_stats_card.html' %}
+            {% endwith %}
         </div>
-        <div class="card-body">
-            {% if attendance_records %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Date</th>
-                            <th>Subject</th>
-                            <th>Status</th>
-                            <th>Marked On</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for record in attendance_records %}
-                        <tr>
-                            <td>{{ record.date }}</td>
-                            <td>
-                                {{ record.subject_name }}
-                                <small class="text-muted">({{ record.subject_code }})</small>
-                            </td>
-                            <td>
-                                <span class="badge bg-{{ 'success' if record.status == 'present' else 'danger' }}">
-                                    {{ record.status|title }}
-                                </span>
-                            </td>
-                            <td>{{ record.marked_at.strftime('%Y-%m-%d %H:%M') if record.marked_at else 'N/A' }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <p class="text-muted mb-0">No attendance records found.</p>
-            {% endif %}
+        
+        <!-- Subjects Stats -->
+        <div class="col-md-4">
+            {% with 
+                title="Total Subjects",
+                value=marks_records|length,
+                subtitle="Enrolled",
+                icon="bi-book",
+                color="success"
+            %}
+                {% include 'includes/_stats_card.html' %}
+            {% endwith %}
+        </div>
+        
+        <!-- GPA Stats -->
+        <div class="col-md-4">
+            {% with 
+                title="GPA",
+                value=calculate_gpa(marks_records),
+                subtitle="Average Grade",
+                icon="bi-graph-up",
+                color="warning"
+            %}
+                {% include 'includes/_stats_card.html' %}
+            {% endwith %}
         </div>
     </div>
 
-    <!-- Marks Records -->
-    <div class="card">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-            <h3 class="h5 mb-0">My Marks</h3>
-            {% if marks_records %}
-            <span class="badge bg-light text-primary">
-                Total Subjects: {{ marks_records|length }}
-            </span>
-            {% endif %}
-        </div>
-        <div class="card-body">
-            {% if marks_records %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead>
-                        <tr>
-                            <th>Subject</th>
-                            <th>Marks</th>
-                            <th>Grade</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for record in marks_records %}
-                        <tr>
-                            <td>
-                                {{ record.subject_name }}
-                                <small class="text-muted">({{ record.subject_code }})</small>
-                            </td>
-                            <td>{{ record.marks }}</td>
-                            <td>
-                                <span class="badge bg-{{ 'success' if record.grade in ['A','B'] else 'warning' if record.grade == 'C' else 'danger' }}">
-                                    {{ record.grade }}
-                                </span>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <p class="text-muted mb-0">No marks records available.</p>
-            {% endif %}
-        </div>
-    </div>
+    <!-- Academic Performance -->
+    {% include 'includes/_marks_table.html' with context %}
+
+    <!-- Attendance History -->
+    {% include 'includes/_attendance_table.html' with context %}
 </div>
 {% endblock %}

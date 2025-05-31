@@ -64,7 +64,12 @@ def login():
 def admin_dashboard():
     if current_user.role != 'admin':
         return "Unauthorized", 403
-        
+
+    # Get user counts
+    total_users = mongo.db.users.count_documents({})
+    faculty_count = mongo.db.users.count_documents({'role': 'faculty'})
+    student_count = mongo.db.users.count_documents({'role': 'student'})
+
     if request.method == 'POST':
         try:
             username = request.form.get('username')
@@ -98,7 +103,11 @@ def admin_dashboard():
     # Get all users and sort by creation date
     users = list(mongo.db.users.find().sort('created_at', -1))
     
-    return render_template('admin_dashboard.html', users=users)
+    return render_template('admin_dashboard.html',
+                         users=users,
+                         total_users=total_users,
+                         faculty_count=faculty_count,
+                         student_count=student_count)
 
 @main.route('/faculty')
 @login_required
@@ -140,7 +149,7 @@ def student_dashboard():
         return "Unauthorized", 403
     
     try:
-        # Get all subjects
+        # Get attendance and marks records
         subjects = list(mongo.db.subjects.find())
         subject_dict = {str(subject['_id']): subject for subject in subjects}
         
@@ -187,14 +196,16 @@ def student_dashboard():
         
         return render_template('student_dashboard.html', 
                              attendance_records=processed_attendance,
-                             marks_records=processed_marks)
+                             marks_records=processed_marks,
+                             calculate_gpa=calculate_gpa)
                              
     except Exception as e:
         print(f"Error in student dashboard: {e}")
         flash('Error loading dashboard data', 'error')
         return render_template('student_dashboard.html', 
                              attendance_records=[],
-                             marks_records=[])
+                             marks_records=[],
+                             calculate_gpa=calculate_gpa)
 
 @main.route('/add_subject', methods=['POST'])
 @login_required
@@ -471,3 +482,18 @@ def delete_user():
         flash('Error deleting user', 'error')
 
     return redirect(url_for('main.admin_dashboard'))
+
+def calculate_gpa(marks_records):
+    if not marks_records:
+        return 0.0
+        
+    grade_points = {
+        'A': 4.0,
+        'B': 3.0,
+        'C': 2.0,
+        'D': 1.0,
+        'F': 0.0
+    }
+    
+    total_points = sum(grade_points[record['grade']] for record in marks_records)
+    return round(total_points / len(marks_records), 2)

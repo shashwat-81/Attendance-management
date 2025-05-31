@@ -1,11 +1,123 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Attendance System - {% block title %}{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0d6efd;
+            --secondary: #0dcaf0;
+            --primary-gradient: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            --primary-light: rgba(13, 110, 253, 0.1);
+            --secondary-light: rgba(13, 202, 240, 0.1);
+            --background-gradient: linear-gradient(135deg, rgba(13, 110, 253, 0.1) 0%, rgba(13, 202, 240, 0.1) 100%);
+            --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 15px 35px rgba(0, 0, 0, 0.2);
+            --border-radius: 15px;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            background: var(--background-gradient);
+        }
+
+        /* Only apply gradient background to non-login pages */
+        body:not(.login-page) {
+            background: linear-gradient(135deg, #0d6efd20 0%, #0dcaf020 100%);
+        }
+
+        .main-content {
+            min-height: calc(100vh - 56px); /* Subtract navbar height */
+            padding: 2rem 0;
+        }
+
+        .navbar {
+            background: var(--primary-gradient) !important;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card {
+            border-radius: var(--border-radius);
+            border: none;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .stats-card {
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stats-icon {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .dashboard-header {
+            background: var(--primary-gradient);
+            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            box-shadow: var(--shadow-md);
+        }
+
+        .progress-bar {
+            background: var(--primary-gradient);
+        }
+
+        .badge {
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+        }
+
+        .alert {
+            border-radius: var(--border-radius);
+            border: none;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Grade colors */
+        .grade-A { background: var(--primary-gradient); }
+        .grade-B { background: linear-gradient(135deg, #20c997, #0dcaf0); }
+        .grade-C { background: linear-gradient(135deg, #fd7e14, #ffc107); }
+        .grade-D { background: linear-gradient(135deg, #dc3545, #fd7e14); }
+        .grade-F { background: linear-gradient(135deg, #dc3545, #6c757d); }
+
+        /* Attendance status */
+        .present-icon {
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .absent-icon {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+    </style>
+    {% block styles %}{% endblock %}
 </head>
-<body>
+<body {% if request.endpoint == 'main.login' %}class="login-page"{% endif %}>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="#">Attendance System</a>
@@ -20,17 +132,22 @@
         </div>
     </nav>
 
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-info">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        {% block content %}{% endblock %}
+    <div class="main-content">
+        <div class="container">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </div>
     </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </html>

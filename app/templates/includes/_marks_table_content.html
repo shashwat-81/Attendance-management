@@ -1,0 +1,43 @@
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Subject</th>
+                <th style="width: 40%;">Marks</th>
+                <th>Grade</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in marks_records %}
+            <tr>
+                <td>
+                    <h6 class="mb-0">{{ record.subject_name }}</h6>
+                    <small class="text-muted">{{ record.subject_code }}</small>
+                </td>
+                <td>
+                    <div class="progress mb-2">
+                        <div class="progress-bar bg-{{ 
+                            'success' if record.marks >= 90
+                            else 'primary' if record.marks >= 80
+                            else 'info' if record.marks >= 70
+                            else 'warning' if record.marks >= 60
+                            else 'danger'
+                        }}" role="progressbar" 
+                             style="width: {{ record.marks }}%"></div>
+                    </div>
+                    <small class="text-muted">{{ record.marks }}/100</small>
+                </td>
+                <td>
+                    <span class="grade-badge bg-{{ 
+                        'success' if record.grade == 'A' 
+                        else 'primary' if record.grade == 'B'
+                        else 'info' if record.grade == 'C'
+                        else 'warning' if record.grade == 'D'
+                        else 'danger' 
+                    }}">{{ record.grade }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
