@@ -1,0 +1,4 @@
+Flask
+flask-pymongo
+Flask-Login
+Werkzeug
