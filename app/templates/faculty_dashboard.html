@@ -2,15 +2,14 @@
 {% block title %}Faculty Dashboard{% endblock %}
 {% block content %}
 <div class="container py-4">
-    <!-- Faculty Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="text-primary">Faculty Dashboard</h2>
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
-            Add New Subject
+            <i class="bi bi-plus-circle"></i> Add New Subject
         </button>
     </div>
 
-    <!-- Subjects Card -->
+    <!-- Subjects List -->
     <div class="card mb-4">
         <div class="card-header bg-light">
             <h3 class="h5 mb-0">My Subjects</h3>
@@ -18,10 +17,11 @@
         <div class="card-body">
             {% if subjects %}
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table">
                     <thead>
                         <tr>
                             <th>Subject Name</th>
+                            <th>Subject Code</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -29,10 +29,9 @@
                         {% for subject in subjects %}
                         <tr>
                             <td>{{ subject.name }}</td>
+                            <td>{{ subject.code }}</td>
                             <td>
-                                <button class="btn btn-sm btn-success" data-bs-toggle="modal" 
-                                        data-bs-target="#markAttendanceModal" 
-                                        data-subject-id="{{ subject._id }}">
+                                <button class="btn btn-sm btn-success" onclick="selectSubject('{{ subject._id }}')">
                                     Mark Attendance
                                 </button>
                             </td>
@@ -47,15 +46,31 @@
         </div>
     </div>
 
-    <!-- Students Card -->
-    <div class="card">
+    <!-- Existing Attendance Marking Form -->
+    <div class="card mb-4" id="attendanceSection" style="display: none;">
         <div class="card-header bg-light">
-            <h3 class="h5 mb-0">Students List</h3>
+            <h3 class="h5 mb-0">Mark Attendance</h3>
         </div>
         <div class="card-body">
-            {% if students %}
-            <div class="table-responsive">
-                <table class="table table-hover">
+            <form method="POST" action="{{ url_for('main.mark_attendance') }}">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Select Subject</label>
+                        <select name="subject_id" class="form-select" required>
+                            <option value="">Choose Subject</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject._id }}">{{ subject.name }} ({{ subject.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Date</label>
+                        <input type="date" name="date" class="form-control" 
+                               value="{{ today }}" max="{{ today }}" required>
+                    </div>
+                </div>
+
+                <table class="table">
                     <thead>
                         <tr>
                             <th>Student Name</th>
@@ -67,16 +82,18 @@
                         <tr>
                             <td>{{ student.username }}</td>
                             <td>
-                                <span class="badge bg-secondary">Not marked</span>
+                                <select name="attendance_{{ student._id }}" class="form-select" required>
+                                    <option value="present">Present</option>
+                                    <option value="absent">Absent</option>
+                                </select>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
-            </div>
-            {% else %}
-            <p class="text-muted">No students enrolled yet.</p>
-            {% endif %}
+
+                <button type="submit" class="btn btn-primary">Save Attendance</button>
+            </form>
         </div>
     </div>
 
@@ -88,15 +105,17 @@
                     <h5 class="modal-title">Add New Subject</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form action="{{ url_for('main.add_subject') }}" method="POST">
+                <form method="POST" action="{{ url_for('main.add_subject') }}">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="subjectName" class="form-label">Subject Name</label>
-                            <input type="text" class="form-control" id="subjectName" name="subject_name" required>
+                            <label for="subject_name" class="form-label">Subject Name</label>
+                            <input type="text" class="form-control" id="subject_name" 
+                                   name="subject_name" required>
                         </div>
                         <div class="mb-3">
-                            <label for="subjectCode" class="form-label">Subject Code</label>
-                            <input type="text" class="form-control" id="subjectCode" name="subject_code" required>
+                            <label for="subject_code" class="form-label">Subject Code</label>
+                            <input type="text" class="form-control" id="subject_code" 
+                                   name="subject_code" required>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -107,61 +126,21 @@
             </div>
         </div>
     </div>
-
-    <!-- Mark Attendance Modal -->
-    <div class="modal fade" id="markAttendanceModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Mark Attendance</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form action="{{ url_for('main.mark_attendance') }}" method="POST">
-                    <div class="modal-body">
-                        <input type="hidden" name="subject_id" id="selectedSubjectId">
-                        <div class="mb-3">
-                            <label class="form-label">Date</label>
-                            <input type="date" class="form-control" name="date" required>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Student Name</th>
-                                        <th>Attendance</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for student in students %}
-                                    <tr>
-                                        <td>{{ student.username }}</td>
-                                        <td>
-                                            <select class="form-select" name="attendance_{{ student._id }}">
-                                                <option value="present">Present</option>
-                                                <option value="absent">Absent</option>
-                                            </select>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Save Attendance</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
-document.getElementById('markAttendanceModal').addEventListener('show.bs.modal', function (event) {
-    var button = event.relatedTarget;
-    var subjectId = button.getAttribute('data-subject-id');
-    document.getElementById('selectedSubjectId').value = subjectId;
+function selectSubject(subjectId) {
+    document.querySelector('select[name="subject_id"]').value = subjectId;
+    document.getElementById('attendanceSection').style.display = 'block';
+    window.scrollTo({
+        top: document.getElementById('attendanceSection').offsetTop,
+        behavior: 'smooth'
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.querySelector('input[name="date"]').value = today;
 });
 </script>
 {% endblock %}
