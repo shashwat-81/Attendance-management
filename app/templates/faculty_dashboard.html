@@ -1,200 +1,351 @@
 {% extends 'base.html' %}
 {% block title %}Faculty Dashboard{% endblock %}
+
+{% block styles %}
+<style>
+    /* Full screen layout */
+    body {
+        overflow-x: hidden;
+    }
+
+    .dashboard-wrapper {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .dashboard-header {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 0;
+        border-radius: 0;
+        box-shadow: var(--shadow-md);
+    }
+
+    .dashboard-content {
+        flex: 1;
+        background: var(--background-gradient);
+        padding: 2rem 0;
+    }
+
+    /* Update container to be wider */
+    .container {
+        max-width: 95%;
+    }
+
+    /* Make cards full height */
+    .tab-content {
+        min-height: calc(100vh - 300px);
+    }
+
+    .subject-card {
+        height: 100%;
+        margin-bottom: 2rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-body {
+        flex: 1;
+    }
+
+    /* Make tables more compact */
+    .table td, .table th {
+        padding: 0.75rem;
+    }
+
+    /* Update quick stats layout */
+    .quick-stats {
+        margin: -1rem -1rem 1rem -1rem;
+        padding: 1rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+    }
+
+    .stat-card {
+        height: 100%;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Update tabs to be more prominent */
+    .nav-tabs {
+        padding: 0 1rem;
+        margin: -1rem -1rem 1rem -1rem;
+        background: white;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .nav-tabs .nav-link {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+    }
+
+    .nav-tabs .nav-link.active {
+        background: var(--primary-gradient);
+        color: white;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .subject-card {
+        background: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-md);
+        transition: all 0.3s ease;
+        margin-bottom: 1.5rem;
+    }
+
+    .subject-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .subject-header {
+        background: var(--primary-light);
+        padding: 1.5rem;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+    }
+
+    .attendance-table th {
+        background: var(--primary-light);
+        color: var(--primary);
+        font-weight: 600;
+        padding: 1rem;
+    }
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .status-present {
+        background: rgba(25, 135, 84, 0.1);
+        color: #198754;
+    }
+
+    .status-absent {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+
+    .quick-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-md);
+        text-align: center;
+    }
+
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        margin: 0 auto 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        font-size: 1.5rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary">Faculty Dashboard</h2>
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
-            <i class="bi bi-plus-circle"></i> Add New Subject
-        </button>
+<div class="dashboard-wrapper">
+    <div class="dashboard-header">
+        <div class="container">
+            <h1 class="display-5 fw-bold">Welcome, {{ current_user.username }}</h1>
+            <p class="lead mb-0">Manage your subjects and student records</p>
+        </div>
     </div>
 
-    <!-- Subjects List -->
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h3 class="h5 mb-0">My Subjects</h3>
-        </div>
-        <div class="card-body">
-            {% if subjects %}
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Subject Name</th>
-                            <th>Subject Code</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for subject in subjects %}
-                        <tr>
-                            <td>{{ subject.name }}</td>
-                            <td>{{ subject.code }}</td>
-                            <td>
-                                <button class="btn btn-sm btn-success" onclick="selectSubject('{{ subject._id }}')">
-                                    Mark Attendance
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    <div class="dashboard-content">
+        <div class="container">
+            <!-- Quick Stats -->
+            <div class="quick-stats">
+                <div class="stat-card">
+                    <div class="stat-icon bg-primary-light text-primary">
+                        <i class="bi bi-book"></i>
+                    </div>
+                    <h3 class="h2 mb-1">{{ subjects|length }}</h3>
+                    <p class="text-muted mb-0">Total Subjects</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(25, 135, 84, 0.1); color: #198754;">
+                        <i class="bi bi-people"></i>
+                    </div>
+                    <h3 class="h2 mb-1">{{ students|length }}</h3>
+                    <p class="text-muted mb-0">Total Students</p>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: var(--secondary-light); color: var(--secondary);">
+                        <i class="bi bi-calendar-check"></i>
+                    </div>
+                    <h3 class="h2 mb-1">{{ today }}</h3>
+                    <p class="text-muted mb-0">Today's Date</p>
+                </div>
             </div>
-            {% else %}
-            <p class="text-muted">No subjects added yet.</p>
-            {% endif %}
-        </div>
-    </div>
 
-    <!-- Existing Attendance Marking Form -->
-    <div class="card mb-4" id="attendanceSection" style="display: none;">
-        <div class="card-header bg-light">
-            <h3 class="h5 mb-0">Mark Attendance</h3>
-        </div>
-        <div class="card-body">
-            <form method="POST" action="{{ url_for('main.mark_attendance') }}">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Select Subject</label>
-                        <select name="subject_id" class="form-select" required>
-                            <option value="">Choose Subject</option>
-                            {% for subject in subjects %}
-                            <option value="{{ subject._id }}">{{ subject.name }} ({{ subject.code }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Date</label>
-                        <input type="date" name="date" class="form-control" 
-                               value="{{ today }}" max="{{ today }}" required>
-                    </div>
-                </div>
+            <!-- Navigation Tabs -->
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#attendance">
+                        <i class="bi bi-calendar-check me-2"></i>Mark Attendance
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#marks">
+                        <i class="bi bi-graph-up me-2"></i>Enter Marks
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#subjects">
+                        <i class="bi bi-book me-2"></i>Manage Subjects
+                    </a>
+                </li>
+            </ul>
 
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Student Name</th>
-                            <th>Attendance Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for student in students %}
-                        <tr>
-                            <td>{{ student.username }}</td>
-                            <td>
-                                <select name="attendance_{{ student._id }}" class="form-select" required>
-                                    <option value="present">Present</option>
-                                    <option value="absent">Absent</option>
-                                </select>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-
-                <button type="submit" class="btn btn-primary">Save Attendance</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Marks Section -->
-    <div class="card mb-4">
-        <div class="card-header bg-light">
-            <h3 class="h5 mb-0">Student Marks</h3>
-        </div>
-        <div class="card-body">
-            <form method="POST" action="{{ url_for('main.add_marks') }}">
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Select Subject</label>
-                        <select name="subject_id" class="form-select" required>
-                            <option value="">Choose Subject</option>
-                            {% for subject in subjects %}
-                            <option value="{{ subject._id }}">{{ subject.name }} ({{ subject.code }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Student Name</th>
-                                <th>Marks (out of 100)</th>
-                                <th>Grade</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for student in students %}
-                            <tr>
-                                <td>{{ student.username }}</td>
-                                <td>
-                                    <input type="number" class="form-control" 
-                                           name="marks_{{ student._id }}"
-                                           min="0" max="100" required
-                                           onchange="updateGrade(this)">
-                                </td>
-                                <td>
-                                    <span class="grade-display badge bg-secondary">Not Set</span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-
-                <button type="submit" class="btn btn-primary">Save Marks</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Add Subject Modal -->
-    <div class="modal fade" id="addSubjectModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add New Subject</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <form method="POST" action="{{ url_for('main.add_subject') }}">
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="subject_name" class="form-label">Subject Name</label>
-                            <input type="text" class="form-control" id="subject_name" 
-                                   name="subject_name" required>
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Attendance Tab -->
+                <div class="tab-pane fade show active" id="attendance">
+                    {% for subject in subjects %}
+                    <div class="subject-card">
+                        <div class="subject-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h4 class="mb-1">{{ subject.name }}</h4>
+                                    <p class="text-muted mb-0">Code: {{ subject.code }}</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="subject_code" class="form-label">Subject Code</label>
-                            <input type="text" class="form-control" id="subject_code" 
-                                   name="subject_code" required>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('main.mark_attendance') }}">
+                                <input type="hidden" name="subject_id" value="{{ subject._id }}">
+                                <div class="table-responsive">
+                                    <table class="table attendance-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Student Name</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for student in students %}
+                                            <tr>
+                                                <td>{{ student.username }}</td>
+                                                <td>
+                                                    <select name="attendance_{{ student._id }}" class="form-select" required>
+                                                        <option value="">Select Status</option>
+                                                        <option value="present">Present</option>
+                                                        <option value="absent">Absent</option>
+                                                    </select>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save me-2"></i>Save Attendance
+                                </button>
+                            </form>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-primary">Add Subject</button>
+                    {% endfor %}
+                </div>
+
+                <!-- Marks Tab -->
+                <div class="tab-pane fade" id="marks">
+                    {% for subject in subjects %}
+                    <div class="subject-card">
+                        <div class="subject-header">
+                            <h4 class="mb-1">{{ subject.name }}</h4>
+                            <p class="text-muted mb-0">Code: {{ subject.code }}</p>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('main.add_marks') }}">
+                                <input type="hidden" name="subject_id" value="{{ subject._id }}">
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Student Name</th>
+                                                <th>Marks (out of 100)</th>
+                                                <th>Grade</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for student in students %}
+                                            <tr>
+                                                <td>{{ student.username }}</td>
+                                                <td>
+                                                    <input type="number" class="form-control" 
+                                                           name="marks_{{ student._id }}"
+                                                           min="0" max="100" required
+                                                           onchange="updateGrade(this)">
+                                                </td>
+                                                <td>
+                                                    <span class="grade-display badge bg-secondary">Not Set</span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save me-2"></i>Save Marks
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                </form>
+                    {% endfor %}
+                </div>
+
+                <!-- Subjects Tab -->
+                <div class="tab-pane fade" id="subjects">
+                    <div class="subject-card">
+                        <div class="subject-header">
+                            <h4 class="mb-0">Add New Subject</h4>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('main.add_subject') }}" class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Subject Name</label>
+                                    <input type="text" class="form-control" name="subject_name" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Subject Code</label>
+                                    <input type="text" class="form-control" name="subject_code" required>
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-plus-circle me-2"></i>Add Subject
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-function selectSubject(subjectId) {
-    document.querySelector('select[name="subject_id"]').value = subjectId;
-    document.getElementById('attendanceSection').style.display = 'block';
-    window.scrollTo({
-        top: document.getElementById('attendanceSection').offsetTop,
-        behavior: 'smooth'
-    });
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date().toISOString().split('T')[0];
-    document.querySelector('input[name="date"]').value = today;
-});
-
 function updateGrade(input) {
     const marks = parseInt(input.value);
     const gradeDisplay = input.parentElement.nextElementSibling.querySelector('.grade-display');
@@ -217,6 +368,24 @@ function updateGrade(input) {
 
     gradeDisplay.textContent = grade;
     gradeDisplay.className = `grade-display badge ${bgClass}`;
+}
+
+function verifyAttendance(subjectId, date) {
+    fetch(`/verify_attendance/${subjectId}/${date}`)
+        .then(response => response.json())
+        .then data => {
+            if (data.status === 'success') {
+                // Update the UI to show attendance status
+                const records = data.data.records;
+                records.forEach(record => {
+                    const select = document.querySelector(`select[name="attendance_${record.student_id}"]`);
+                    if (select) {
+                        select.value = record.status;
+                    }
+                });
+            }
+        })
+        .catch(error => console.error('Error:', error));
 }
 </script>
 {% endblock %}
