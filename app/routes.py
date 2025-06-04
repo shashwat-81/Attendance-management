@@ -30,22 +30,20 @@ def login():
         username = request.form['username']
         password = request.form['password']
         
-        # Add debug print statements
-        print(f"Login attempt - Username: {username}")
-        
         user_data = mongo.db.users.find_one({'username': username})
         
         if not user_data:
-            print("User not found in database")
             flash('Invalid username or password', 'error')
             return render_template('login.html')
             
+        # Check if password reset is required
+        if user_data.get('requires_password_reset'):
+            return render_template('reset_password.html', user_id=str(user_data['_id']))
+        
         if not verify_password(password, user_data['password']):
-            print("Invalid password")
             flash('Invalid username or password', 'error')
             return render_template('login.html')
         
-        print(f"User found: {user_data['username']} with role: {user_data['role']}")    
         user = User(user_data)
         login_user(user)
         
@@ -482,6 +480,29 @@ def delete_user():
         flash('Error deleting user', 'error')
 
     return redirect(url_for('main.admin_dashboard'))
+
+@main.route('/reset-password', methods=['POST'])
+def reset_password():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    new_password = data.get('new_password')
+    
+    if not user_id or not new_password:
+        return jsonify({'error': 'Missing required fields'}), 400
+        
+    hashed_password = hash_password(new_password)
+    
+    mongo.db.users.update_one(
+        {'_id': ObjectId(user_id)},
+        {
+            '$set': {
+                'password': hashed_password,
+                'requires_password_reset': False
+            }
+        }
+    )
+    
+    return jsonify({'message': 'Password updated successfully'}), 200
 
 def calculate_gpa(marks_records):
     if not marks_records:
