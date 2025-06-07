@@ -1,10 +1,12 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_login import login_user, logout_user, login_required, current_user
 from . import mongo, login_manager
 from .models import User
 from .utils import hash_password, verify_password
 from bson.objectid import ObjectId
 from datetime import datetime
+from io import BytesIO
+import pandas as pd
 
 main = Blueprint('main', __name__)
 
@@ -503,6 +505,133 @@ def reset_password():
     )
     
     return jsonify({'message': 'Password updated successfully'}), 200
+
+@main.route('/generate_report/<report_type>')
+@login_required
+def generate_report(report_type):
+    if current_user.role != 'faculty':
+        return "Unauthorized", 403
+        
+    try:
+        # Get all subjects for this faculty
+        subjects = list(mongo.db.subjects.find({'faculty_id': str(current_user.id)}))
+        subject_dict = {str(subject['_id']): subject for subject in subjects}
+        
+        if report_type == 'attendance':
+            # Get all attendance records
+            attendance_records = list(mongo.db.attendance.find({
+                'faculty_id': str(current_user.id)
+            }))
+            
+            # Process attendance data for report
+            report_data = []
+            for record in attendance_records:
+                subject = subject_dict.get(record['subject_id'], {})
+                for student_record in record.get('records', []):
+                    report_data.append({
+                        'Date': record['date'],
+                        'Subject': subject.get('name', 'Unknown'),
+                        'Subject Code': subject.get('code', 'N/A'),
+                        'Student Name': student_record['student_name'],
+                        'Status': student_record['status'].title()
+                    })
+            
+            df = pd.DataFrame(report_data)
+            filename = f'attendance_report_{datetime.now().strftime("%Y%m%d")}.xlsx'
+            
+        elif report_type == 'marks':
+            # Get all marks records
+            marks_records = list(mongo.db.marks.find({
+                'faculty_id': str(current_user.id)
+            }))
+            
+            # Process marks data for report
+            report_data = []
+            for record in marks_records:
+                subject = subject_dict.get(record['subject_id'], {})
+                student = mongo.db.users.find_one({'_id': ObjectId(record['student_id'])})
+                if student:
+                    report_data.append({
+                        'Subject': subject.get('name', 'Unknown'),
+                        'Subject Code': subject.get('code', 'N/A'),
+                        'Student Name': student['username'],
+                        'Marks': record['marks'],
+                        'Grade': record['grade']
+                    })
+            
+            df = pd.DataFrame(report_data)
+            filename = f'marks_report_{datetime.now().strftime("%Y%m%d")}.xlsx'
+        
+        else:
+            return "Invalid report type", 400
+
+        # Create Excel file in memory
+        excel_file = BytesIO()
+        df.to_excel(excel_file, index=False)
+        excel_file.seek(0)
+        
+        return send_file(
+            excel_file,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=filename
+        )
+        
+    except Exception as e:
+        print(f"Error generating report: {e}")
+        flash('Error generating report', 'error')
+        return redirect(url_for('main.faculty_dashboard'))
+
+@main.route('/attendance_by_date', methods=['GET', 'POST'])
+@login_required
+def attendance_by_date():
+    if current_user.role != 'faculty':
+        flash('Unauthorized access', 'error')
+        return redirect(url_for('main.index'))
+        
+    # Get all subjects taught by this faculty
+    subjects = list(mongo.db.subjects.find({'faculty_id': str(current_user.id)}))
+    
+    if request.method == 'POST':
+        date = request.form.get('date')
+        subject_id = request.form.get('subject_id')
+        
+        attendance = mongo.db.attendance.find_one({
+            'date': date,
+            'subject_id': subject_id,
+            'faculty_id': str(current_user.id)
+        })
+        
+        if attendance:
+            present_students = []
+            absent_students = []
+            
+            # Get all students
+            all_students = list(mongo.db.users.find({'role': 'student'}))
+            
+            # Create a dict of student records from attendance
+            attendance_dict = {
+                record['student_id']: record 
+                for record in attendance.get('records', [])
+            }
+            
+            for student in all_students:
+                student_record = attendance_dict.get(str(student['_id']))
+                if student_record and student_record['status'] == 'present':
+                    present_students.append(student['username'])
+                else:
+                    absent_students.append(student['username'])
+                    
+            return render_template(
+                'attendance_by_date.html',
+                subjects=subjects,
+                selected_date=date,
+                selected_subject=subject_id,
+                present_students=present_students,
+                absent_students=absent_students
+            )
+            
+    return render_template('attendance_by_date.html', subjects=subjects)
 
 def calculate_gpa(marks_records):
     if not marks_records:
