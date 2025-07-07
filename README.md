@@ -1,6 +1,6 @@
 ﻿# Attendance Management System
 
-A web-based attendance management system built with Flask and MongoDB.
+  A web-based attendance management system built with Flask and MongoDB.
 
 ## Features
 
